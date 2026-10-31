@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NutriPlan – Calorie Tracker & Diet Planner</title>
+<meta name="description" content="NutriPlan: free calorie tracker and diet planner. Find your optimal weight, daily calories and a meal plan for vegan, vegetarian and non-vegetarian diets, with allergy filters.">
+<meta name="author" content="Gaurav Patil">
+<meta name="copyright" content="© 2026 Gaurav Patil. All rights reserved.">
+<meta name="theme-color" content="#14a37f">
+<style>
+/* ===== 1. THEME (edit colours here) ===== */
+:root{
+  --bg:#f4f7fb;--card:#fff;--text:#1c2430;--muted:#667085;--line:#e3e8f0;--track:#e6ecf4;
+  --brand:#14a37f;--brand2:#3b82f6;--warn:#b45309;--warn-bg:#fef3c7;--r:16px;--shadow:0 6px 24px rgba(20,40,80,.08);
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){color-scheme:dark;--bg:#0e141b;--card:#18212b;--text:#e8edf3;--muted:#93a1b3;--line:#27333f;--track:#26323f;--warn:#fbbf24;--warn-bg:#3a2f12;--shadow:none}
+}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0e141b;--card:#18212b;--text:#e8edf3;--muted:#93a1b3;--line:#27333f;--track:#26323f;--warn:#fbbf24;--warn-bg:#3a2f12;--shadow:none}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+
+/* ===== 2. BASE ===== */
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+[hidden]{display:none!important}
+h2{margin:0 0 12px;font-size:1.2rem}
+h3{margin:0;font-size:1rem}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.muted{color:var(--muted)}
+
+/* ===== 3. LAYOUT ===== */
+.hero{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:36px 16px 64px;text-align:center}
+.hero h1{margin:0 0 6px;font-size:clamp(1.8rem,5vw,2.6rem)}
+.hero p{margin:0 auto;max-width:560px;opacity:.92}
+.wrap{max-width:960px;margin:-36px auto 0;padding:0 16px 32px;display:grid;gap:16px}
+#result{display:grid;gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.meals{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.row .muted{margin:0}
+#plan .row{margin-bottom:12px}
+footer{max-width:640px;margin:0 auto;padding:0 16px 32px;text-align:center;color:var(--muted);font-size:.8rem}
+
+/* ===== 4. FORM ===== */
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
+label{display:grid;gap:4px;font-size:.9rem;color:var(--muted)}
+input[type=number],input[type=text],select{width:100%;padding:10px 12px;font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:10px}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--brand2);outline-offset:2px}
+.sub{margin:18px 0 8px;font-size:1rem;color:var(--text)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{position:relative;display:block}
+.chip input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.chip span{display:block;padding:8px 14px;border:1px solid var(--line);border-radius:99px;background:var(--bg);color:var(--text)}
+.chip input:checked+span{background:var(--brand);border-color:var(--brand);color:#fff}
+.chip input:focus-visible+span{outline:2px solid var(--brand2);outline-offset:2px}
+.btn{padding:11px 20px;font:inherit;font-weight:600;color:#fff;background:var(--brand);border:0;border-radius:10px;cursor:pointer}
+.btn:hover{filter:brightness(1.08)}
+.btn.alt{background:var(--track);color:var(--text)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+#go{margin-top:18px;width:100%}
+.err{margin:8px 0 0;color:var(--warn);min-height:1.2em}
+.add{display:grid;grid-template-columns:2fr 1fr auto;gap:8px;margin-top:12px}
+.add.two{grid-template-columns:1fr auto}
+@media(max-width:520px){.add:not(.two){grid-template-columns:1fr 1fr}.add:not(.two) .btn{grid-column:1/-1}}
+
+/* ===== 5. RESULTS ===== */
+.stat{display:grid;gap:2px}
+.stat small,.stat span{color:var(--muted);font-size:.85rem}
+.stat strong{font-size:1.7rem;color:var(--brand)}
+.note{background:var(--warn-bg);color:var(--warn);padding:10px 14px;border-radius:10px;margin-bottom:8px}
+.mac{display:grid;gap:4px;margin-bottom:12px}
+.bar{height:12px;background:var(--track);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--brand),var(--brand2));transition:width .4s}
+.bar i.over{background:var(--warn)}
+li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:var(--bg);border-radius:10px}
+li>div{flex:1;display:grid}
+li>span:first-child{flex:1}
+li small{color:var(--muted)}
+.x{flex:none;width:32px;height:32px;border:0;border-radius:50%;background:var(--track);color:var(--text);cursor:pointer}
+.link{margin-top:12px;padding:0;background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font:inherit}
+
+/* ===== 7. TOAST (instant feedback when a food is logged) ===== */
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);width:max-content;max-width:calc(100% - 32px);display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--text);color:var(--bg);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:10}
+.toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast button[hidden]{display:none}
+.toast button{padding:0;background:none;border:0;color:var(--brand);font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}
+
+/* ===== 8. LEGAL & CREDITS ===== */
+.hero small{display:block;margin-top:10px;opacity:.85}
+.terms{margin:10px 0 0;color:var(--muted);font-size:.8rem;text-align:center}
+.terms .link{margin:0}
+.legal details{border-top:1px solid var(--line);padding:10px 0}
+.legal details:first-of-type{border-top:0}
+.legal summary{cursor:pointer;font-weight:600}
+.legal p{margin:8px 0 0;color:var(--muted);font-size:.9rem}
+.legal ul{display:block;margin-top:8px;padding-left:20px;list-style:disc;color:var(--muted);font-size:.9rem}
+.legal li{display:list-item;padding:2px 0;background:none;border-radius:0}
+.legal .btn{margin-top:10px}
+footer p{margin:4px 0}
+
+/* ===== 9. USEFUL TOOLS (affiliate links) ===== */
+.tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.tool{display:grid;gap:4px;padding:14px;background:var(--bg);border:1px solid var(--line);border-radius:12px;color:var(--text);text-decoration:none}
+.tool:hover{border-color:var(--brand)}
+.tool small{color:var(--muted)}
+.tool span{color:var(--brand);font-weight:600;font-size:.9rem}
+.disclosure{margin:12px 0 0;color:var(--muted);font-size:.8rem}
+</style>
+</head>
+<body>
+
+<!-- ===== 6. PAGE ===== -->
+<header class="hero">
+  <h1>🥗 NutriPlan</h1>
+  <p>Find your optimal weight, get a daily calorie target and a meal plan that fits what you eat, then track your day.</p>
+  <small>Created by Gaurav Patil</small>
+</header>
+
+<main class="wrap">
+  <section class="card" id="setup">
+    <h2>1 · Tell us about you</h2>
+    <div class="fields">
+      <label>Age<input id="age" type="number" inputmode="numeric" placeholder="e.g. 20"></label>
+      <label>Sex<select id="sex"><option value="m">Male</option><option value="f">Female</option></select></label>
+      <label>Height (cm)<input id="h" type="number" inputmode="decimal" placeholder="e.g. 172"></label>
+      <label>Current weight (kg)<input id="w" type="number" inputmode="decimal" placeholder="e.g. 70"></label>
+      <label>Activity level<select id="act"></select></label>
+      <label>Pace<select id="pace"></select></label>
+    </div>
+    <h3 class="sub">What do you eat?</h3>
+    <div class="chips" id="diets"></div>
+    <h3 class="sub">Any allergies? (optional)</h3>
+    <div class="chips" id="allergies"></div>
+    <p class="err" id="err" role="alert"></p>
+    <button class="btn" id="go">Calculate my plan</button>
+    <p class="terms">By continuing you confirm you are 18 or older and agree to the <button class="link" id="termsLink">Terms, Privacy and Disclaimer</button>.</p>
+  </section>
+
+  <div id="result" hidden>
+    <div class="grid" id="stats"></div>
+    <section class="card" id="goalbox">
+      <h2>2 · Your goal weight</h2>
+      <p class="muted" id="goalText"></p>
+      <div class="add two">
+        <input id="goal" type="number" inputmode="decimal" aria-label="Goal weight in kg">
+        <button class="btn" id="setGoal">Update plan</button>
+      </div>
+      <p class="err" id="goalErr" role="alert"></p>
+    </section>
+    <div id="notes"></div>
+    <section class="card" id="macros"></section>
+    <section id="plan"></section>
+    <section class="card" id="tracker">
+      <h2>4 · Today’s calorie tracker</h2>
+      <p class="muted" id="trkSummary"></p>
+      <div class="bar"><i id="trkBar"></i></div>
+      <ul id="trkList" style="margin-top:12px"></ul>
+      <div class="add">
+        <input id="fName" type="text" maxlength="40" placeholder="Food, e.g. Banana" aria-label="Food name">
+        <input id="fKcal" type="number" inputmode="numeric" placeholder="kcal" aria-label="Calories">
+        <button class="btn" id="addBtn">Add</button>
+      </div>
+      <p class="err" id="fErr" role="alert"></p>
+      <button class="link" id="clearBtn">Clear today</button>
+    </section>
+  </div>
+  <section class="card" id="tools" hidden>
+    <h2>Useful tools</h2>
+    <p class="muted">Handy things that make it easier to follow your plan.</p>
+    <div class="tools" id="toolList"></div>
+    <p class="disclosure" id="disclosure"></p>
+  </section>
+<section class="card legal" id="legal">
+    <h2>Legal information</h2>
+    <details>
+      <summary>Health and allergy disclaimer</summary>
+      <p>NutriPlan is for general information and education only. It is not medical advice, diagnosis or treatment, and using it does not create a doctor–patient or dietitian–client relationship. Calories, weights and meal ideas are estimates based on BMI and the Mifflin–St Jeor equation, and they may not suit your body.</p>
+      <p>Please talk to a qualified doctor or registered dietitian before changing your diet, especially if you are pregnant or breastfeeding, have a medical condition (for example diabetes, heart, kidney or thyroid problems, or an eating disorder), or take medication. Stop and get medical help if you feel unwell.</p>
+      <p>The food suggestions are not allergen-safe. Ingredients, brands and cross-contamination vary, so always read food labels and ask about ingredients. If you have a serious allergy, check with your doctor first.</p>
+    </details>
+    <details>
+      <summary>Privacy</summary>
+      <p>This page has no accounts, ads, analytics or cookies, and it does not send your details anywhere. What you enter (age, sex, height, weight, activity, food preference, allergies, goal weight and foods you log) is processed in your browser and saved only on your own device, using local storage, so the page can remember you. The website host may keep standard technical logs.</p>
+      <p>The Share and Download PDF buttons create your meal plan on your device. Sharing sends only the meal plan text (no age, weight or allergies) to the app or person you choose.</p>
+      <p>The Useful tools section may contain affiliate links to other websites, such as Amazon. If you click one, that website has its own privacy policy and may use cookies to record that you came from NutriPlan. NutriPlan does not send them anything you entered.</p>
+      <p>You can remove your saved data at any time with the button below, or by clearing your browser data.</p>
+      <button class="btn" id="wipe">Delete my saved data</button>
+    </details>
+    <details id="legalTerms">
+      <summary>Terms of use</summary>
+      <ul>
+        <li>You must be 18 or older to use NutriPlan.</li>
+        <li>NutriPlan is provided “as is” and “as available”, without warranties of any kind, including accuracy, completeness or fitness for a particular purpose.</li>
+        <li>You use NutriPlan at your own risk. To the fullest extent allowed by law, the creator is not liable for any loss, injury or damage that results from using this site or relying on its results.</li>
+        <li>Food names and calorie values are approximate.</li>
+        <li>Links to other websites are provided for convenience. NutriPlan is not responsible for third-party websites, products or prices.</li>
+        <li>These terms may change at any time. Continuing to use NutriPlan means you accept the updated terms.</li>
+        <li>These terms are governed by the laws of India.</li>
+      </ul>
+    </details>
+    <details>
+      <summary>Copyright and ownership</summary>
+      <p>© 2026 Gaurav Patil. All rights reserved. The NutriPlan name, design, text and code belong to Gaurav Patil. You may use NutriPlan for personal, non-commercial purposes. You may not copy, republish, sell or modify it, or present it as your own work, without written permission.</p>
+    </details>
+  </section>
+</main>
+
+<footer>
+  <p>Created by <strong>Gaurav Patil</strong> · © 2026 Gaurav Patil. All rights reserved.</p>
+  <p>NutriPlan gives general guidance and is not medical advice. Please talk to a doctor or dietitian if you have a health condition or are pregnant. Always check food labels for allergens.</p>
+  <p id="affFooter" hidden></p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span id="toastText"></span>
+  <button id="toastBtn">View log</button>
+</div>
+
+<script>
+"use strict";
+/* ============ 1. CONFIG: edit these lists to change the app ============ */
+const ACTIVITY = [["Sedentary – little exercise",1.2],["Light – 1–3 days/week",1.375],["Moderate – 3–5 days/week",1.55],["Very active – 6–7 days/week",1.725]];
+const PACE = [["Gentle – 0.25 kg/week",0.25],["Steady – 0.5 kg/week",0.5],["Faster – 0.75 kg/week",0.75]];
+const DIETS = ["Vegan","Vegetarian","Eggetarian","Non-vegetarian"];   // list position = level (a food is shown if its level <= yours)
+const ALLERGENS = [["dairy","Dairy"],["gluten","Gluten"],["nuts","Nuts"],["soy","Soy"],["eggs","Eggs"],["fish","Fish"]];
+const MEALS = [["Breakfast","b",.25,"🌅"],["Lunch","l",.35,"🍛"],["Snack","s",.10,"🍎"],["Dinner","d",.30,"🌙"]];  // name, key, share of daily kcal, icon
+const LIMITS = {age:[18,90,"Age"],h:[120,230,"Height"],w:[30,300,"Weight"]};
+
+// USEFUL TOOLS (affiliate links). Paste your own link between the quotes after "link:".
+// A product only appears when its link starts with https://. With no links, the whole section stays hidden.
+// Change DISCLOSURE if you join a different program (it is shown next to the links and in the footer).
+const DISCLOSURE = "As an Amazon Associate, I earn from qualifying purchases.";
+const TOOLS = [
+  { icon: "⚖️", name: "Digital kitchen scale", why: "Weigh portions so your calorie count is accurate.", link: "https://link.amazon/B05edxAK6" },
+  { icon: "🥄", name: "Measuring cups and spoons", why: "Measure rice, oil and dal without guessing.", link: "https://link.amazon/B04Ytg8Dz" },
+  { icon: "🍱", name: "Meal-prep containers", why: "Prepare your meals ahead and carry them with you.", link: "https://link.amazon/B046Mhp5S" },
+  { icon: "🥤", name: "Gym shaker bottle", why: "Mix drinks and carry them to the gym.", link: "https://link.amazon/B0282iPUI" },
+  { icon: "💧", name: "Water bottle", why: "Keep track of how much water you drink.", link: "https://link.amazon/B060WLON9" },
+  { icon: "⌚", name: "Fitness band", why: "Track your steps and daily activity.", link: "https://link.amazon/B0aUjJNU2" }
+];
+
+// Food list: [meal, name, one serving, kcal per serving, diet level (0 vegan … 3 non-veg), allergens]
+const FOODS = [
+ ["b","Vegetable poha","1 plate",230,0,""],["b","Idli with sambar","3 idlis",240,0,""],["b","Dosa with chutney","2 dosas",260,0,""],
+ ["b","Besan chilla with veggies","2 chillas",220,0,""],["b","Fruit & chia bowl","1 bowl",190,0,""],["b","Vegetable upma","1 plate",250,0,"gluten"],
+ ["b","Oats with fruit","1 bowl",220,0,"gluten"],["b","Peanut butter toast","2 slices",330,0,"nuts,gluten"],["b","Tofu scramble","1 plate",220,0,"soy"],
+ ["b","Greek yogurt with fruit","1 bowl",220,1,"dairy"],["b","Paneer paratha","1 paratha",320,1,"dairy,gluten"],
+ ["b","Veg omelette with toast","2 eggs",290,2,"eggs,gluten"],["b","Boiled eggs with fruit","2 eggs",210,2,"eggs"],
+ ["l","Dal, rice & sabzi","1 plate",480,0,""],["l","Rajma with rice","1 plate",520,0,""],["l","Chole with brown rice","1 plate",500,0,""],
+ ["l","Quinoa veggie bowl","1 bowl",420,0,""],["l","Roti, dal & veg curry","1 plate",450,0,"gluten"],["l","Chickpea salad wrap","1 wrap",400,0,"gluten"],
+ ["l","Tofu stir-fry with rice","1 plate",450,0,"soy"],["l","Paneer bhurji with roti","1 plate",490,1,"dairy,gluten"],
+ ["l","Veg khichdi with curd","1 bowl",400,1,"dairy"],["l","Egg curry with rice","1 plate",480,2,"eggs"],
+ ["l","Grilled chicken, rice & salad","1 plate",500,3,""],["l","Chicken curry with roti","1 plate",520,3,"gluten"],["l","Fish curry with rice","1 plate",480,3,"fish"],
+ ["s","Roasted chana","1 handful",120,0,""],["s","Fresh fruit","1 medium",90,0,""],["s","Sprouts salad","1 bowl",130,0,""],
+ ["s","Roasted makhana","1 bowl",110,0,""],["s","Hummus with veggie sticks","1 bowl",140,0,""],["s","Almonds & walnuts","1 handful",170,0,"nuts"],
+ ["s","Edamame","1 cup",120,0,"soy"],["s","Buttermilk","1 glass",60,1,"dairy"],["s","Greek yogurt","1 cup",100,1,"dairy"],
+ ["s","Protein shake","1 scoop",130,1,"dairy"],["s","Boiled egg","1 egg",75,2,"eggs"],
+ ["d","Lentil soup with salad","1 bowl",300,0,""],["d","Moong dal khichdi","1 bowl",380,0,""],["d","Rice & sambar","1 plate",420,0,""],
+ ["d","Sweet potato & chickpea salad","1 plate",380,0,""],["d","Mixed veg curry with roti","1 plate",400,0,"gluten"],
+ ["d","Tofu & veg curry with rice","1 plate",420,0,"soy"],["d","Grilled paneer with veggies","1 plate",380,1,"dairy"],
+ ["d","Veg pulao with raita","1 plate",430,1,"dairy"],["d","Egg bhurji with roti","1 plate",400,2,"eggs,gluten"],
+ ["d","Grilled fish with veggies","1 plate",380,3,"fish"],["d","Chicken tikka, salad & roti","1 plate",450,3,"gluten"]
+];
+
+/* ============ 2. HELPERS ============ */
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+const fmt = (n) => Math.round(n * 10) / 10;
+// Builds elements with textContent only, so user input can never inject HTML.
+function el(tag, cls, text, kids) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  (kids || []).forEach((k) => e.append(k));
+  return e;
+}
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("nutriplan:" + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("nutriplan:" + k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } }
+};
+
+/* ============ 3. CALCULATIONS (pure functions, no DOM) ============ */
+function calculate(p) {
+  const sq = (p.h / 100) ** 2;
+  const lo = 18.5 * sq, hi = 24.9 * sq, ideal = 22 * sq;           // healthy BMI range, optimal = BMI 22
+  const goal = p.goal || ideal, diff = goal - p.w;
+  const mode = Math.abs(diff) < 0.5 ? "maintain" : diff < 0 ? "lose" : "gain";
+  const tdee = (10 * p.w + 6.25 * p.h - 5 * p.age + (p.sex === "m" ? 5 : -161)) * p.act;   // Mifflin–St Jeor × activity
+  const change = Math.min(p.pace * 1100, 1000);                    // 1 kg ≈ 7700 kcal
+  const raw = mode === "lose" ? tdee - change : mode === "gain" ? tdee + change : tdee;
+  const floor = p.sex === "m" ? 1500 : 1200;                       // never go below a safe minimum
+  const target = Math.round(Math.max(raw, floor) / 10) * 10;
+  const gap = mode === "lose" ? tdee - target : target - tdee;
+  const weeks = mode === "maintain" || gap < 100 ? 0 : Math.ceil(Math.abs(diff) * 1100 / gap);
+  const pro = Math.min(1.6 * goal, 0.3 * target / 4), fat = 0.25 * target / 9;
+  const bmi = p.w / sq;
+  return {
+    lo, hi, ideal, goal, mode, target, weeks, bmi, floored: raw < floor,
+    bmiLabel: bmi < 18.5 ? "Underweight" : bmi < 25 ? "Healthy" : bmi < 30 ? "Overweight" : "Obese",
+    macros: [["Protein", pro, 4], ["Carbs", (target - pro * 4 - fat * 9) / 4, 4], ["Fat", fat, 9]]
+  };
+}
+const allowed = (f) => f[4] <= S.diet && !f[5].split(",").some((a) => S.allergies.includes(a));
+const pick = (arr, n) => arr.map((v) => [Math.random(), v]).sort((a, b) => a[0] - b[0]).slice(0, n).map((x) => x[1]);
+
+/* ============ 4. STATE ============ */
+let S = null;    // the person's profile
+let C = null;    // calculated results
+let log = [];    // today's eaten foods
+let P = [];      // meals currently shown in the plan (used by Share and PDF)
+const todayKey = () => new Date().toLocaleDateString("en-CA");
+const saveLog = () => store.set("log", { date: todayKey(), items: log });
+function loadLog() {
+  const d = store.get("log", {});
+  log = d.date === todayKey() && Array.isArray(d.items) ? d.items.map((x) => ({ n: String(x.n).slice(0, 40), k: Number(x.k) || 0 })) : [];
+}
+
+/* ============ 5. RENDERING ============ */
+function refresh() {
+  C = calculate(S);
+  renderStats(); renderMacros(); renderPlan(); renderTracker();
+}
+
+function renderStats() {
+  const stat = (l, v, s) => el("div", "card stat", null, [el("small", null, l), el("strong", null, v), el("span", null, s)]);
+  $("#stats").replaceChildren(
+    stat("BMI", fmt(C.bmi), C.bmiLabel),
+    stat("Optimal weight", fmt(C.ideal) + " kg", "Healthy range " + fmt(C.lo) + "–" + fmt(C.hi) + " kg"),
+    stat("Daily calories", C.target + " kcal", { lose: "to lose weight", gain: "to gain weight", maintain: "to maintain weight" }[C.mode]),
+    stat("Time to goal", C.mode === "maintain" ? "Maintain" : C.weeks ? "≈ " + C.weeks + " weeks" : "–", "Goal: " + fmt(C.goal) + " kg")
+  );
+  $("#goalText").textContent = "Your optimal weight is " + fmt(C.ideal) + " kg. Want a different target? Enter it below. Leave it empty to use the optimal weight.";
+  $("#goal").placeholder = "Optimal: " + fmt(C.ideal) + " kg";
+  $("#goal").value = S.goal || "";
+  const notes = [];
+  if (C.floored) notes.push("Your calories were raised to a safe minimum, so reaching your goal may take longer.");
+  if (C.goal < C.lo) notes.push("Your goal weight is below the healthy range for your height. Please speak to a doctor or dietitian first.");
+  $("#notes").replaceChildren(...notes.map((t) => el("div", "note", t)));
+}
+
+function renderMacros() {
+  $("#macros").replaceChildren(el("h2", null, "Daily macros"), ...C.macros.map(([n, g, k]) => {
+    const pct = Math.round(g * k / C.target * 100), i = el("i");
+    i.style.width = pct + "%";
+    return el("div", "mac", null, [el("span", null, n + ": " + Math.round(g) + " g · " + pct + "% of calories"), el("div", "bar", null, [i])]);
+  }));
+}
+
+function renderPlan() {
+  const btn = (cls, text, fn) => { const b = el("button", cls, text); b.onclick = fn; return b; };
+  const actions = el("div", "actions", null, [
+    btn("btn", "🔀 Shuffle ideas", renderPlan),
+    btn("btn alt", "📤 Share", sharePlan),
+    btn("btn alt", "📄 Download PDF", downloadPDF)
+  ]);
+  P = [];
+  const cards = MEALS.map(([name, key, share, icon]) => {
+    const kcal = Math.round(C.target * share), meal = { name, kcal, items: [] };
+    P.push(meal);
+    const items = pick(FOODS.filter((f) => f[0] === key && allowed(f)), 3).map((f) => {
+      const qty = Math.max(0.5, Math.round(kcal / f[3] * 2) / 2), cal = Math.round(qty * f[3]);
+      meal.items.push({ n: f[1], q: (qty === 1 ? "" : qty + " × ") + f[2], k: cal });
+      const add = el("button", "x", "+");
+      add.title = "Add to today’s log";
+      add.setAttribute("aria-label", "Log " + f[1]);
+      add.onclick = () => { addLog(f[1], cal); add.textContent = "✓"; setTimeout(() => { add.textContent = "+"; }, 1200); };
+      return el("li", null, null, [el("div", null, null, [el("b", null, f[1]), el("small", null, (qty === 1 ? "" : qty + " × ") + f[2] + " · ≈ " + cal + " kcal")]), add]);
+    });
+    return el("div", "card", null, [
+      el("div", "row", null, [el("h3", null, icon + " " + name), el("small", "muted", "≈ " + kcal + " kcal")]),
+      items.length ? el("ul", null, null, items) : el("p", "muted", "No matching foods. Try removing an allergy.")
+    ]);
+  });
+  $("#plan").replaceChildren(el("div", "row", null, [el("h2", null, "3 · Your daily meal plan"), actions]), el("div", "meals", null, cards));
+}
+
+function renderTracker() {
+  const eaten = log.reduce((s, x) => s + x.k, 0), left = C.target - eaten;
+  $("#trkSummary").textContent = eaten + " of " + C.target + " kcal eaten · " + (left >= 0 ? left + " kcal left" : -left + " kcal over");
+  const bar = $("#trkBar");
+  bar.style.width = Math.min(100, eaten / C.target * 100) + "%";
+  bar.classList.toggle("over", left < 0);
+  $("#trkList").replaceChildren(...log.map((x, i) => {
+    const del = el("button", "x", "✕");
+    del.setAttribute("aria-label", "Remove " + x.n);
+    del.onclick = () => { log.splice(i, 1); saveLog(); renderTracker(); };
+    return el("li", null, null, [el("span", null, x.n), el("span", null, x.k + " kcal"), del]);
+  }));
+}
+
+let toastTimer;
+function toast(text, viewLog) {
+  $("#toastText").textContent = text;
+  $("#toastBtn").hidden = !viewLog;
+  $("#toast").classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $("#toast").classList.remove("show"), 3500);
+}
+
+function addLog(name, kcal) {
+  log.push({ n: String(name).slice(0, 40), k: Math.round(kcal) });
+  saveLog(); renderTracker();
+  const eaten = log.reduce((s, x) => s + x.k, 0);
+  toast("✓ Added " + String(name).slice(0, 40) + " · " + eaten + " of " + C.target + " kcal today", true);
+}
+
+function renderTools() {
+  const live = TOOLS.filter((t) => /^https:\/\//.test(t.link));   // https only, so a bad link can never run code
+  $("#tools").hidden = !live.length;
+  $("#affFooter").hidden = !live.length;
+  $("#affFooter").textContent = DISCLOSURE;
+  $("#disclosure").textContent = "Affiliate disclosure: " + DISCLOSURE + " Some links here are affiliate links, so I may earn a small commission at no extra cost to you. These tools do not change your meal plan.";
+  $("#toolList").replaceChildren(...live.map((t) => {
+    const a = el("a", "tool", null, [el("b", null, t.icon + " " + t.name), el("small", null, t.why), el("span", null, "View product")]);
+    a.href = t.link; a.target = "_blank"; a.rel = "sponsored noopener noreferrer";
+    return a;
+  }));
+}
+
+/* ============ 5b. SHARE & PDF (built on the device; only the meal plan, no personal details) ============ */
+const GOAL_TEXT = { lose: "to lose weight", gain: "to gain weight", maintain: "to maintain weight" };
+const siteUrl = () => (/^https?:/.test(location.protocol) ? location.origin + location.pathname : "");
+const macroText = () => C.macros.map(([n, g]) => n + " " + Math.round(g) + " g").join(" · ");
+
+function planText() {
+  const lines = ["🥗 My NutriPlan daily meal plan", C.target + " kcal a day " + GOAL_TEXT[C.mode] + " · " + macroText(), ""];
+  P.forEach((m, i) => {
+    lines.push(MEALS[i][3] + " " + m.name + " (≈ " + m.kcal + " kcal)");
+    m.items.forEach((x) => lines.push("• " + x.n + " – " + x.q + " · ≈ " + x.k + " kcal"));
+    if (!m.items.length) lines.push("• No matching foods");
+    lines.push("");
+  });
+  lines.push("Pick one option per meal. General guidance only, not medical advice.");
+  return lines.join("\n");
+}
+
+async function sharePlan() {
+  const data = { title: "My NutriPlan meal plan", text: planText() }, url = siteUrl();
+  if (url) data.url = url;
+  if (navigator.share) {
+    try { await navigator.share(data); return; } catch (e) { if (e.name === "AbortError") return; }
+  }
+  try {
+    await navigator.clipboard.writeText(data.text + (url ? "\n" + url : ""));
+    toast("✓ Meal plan copied – paste it anywhere to share");
+  } catch (e) { toast("Sharing isn’t available in this browser"); }
+}
+
+// Minimal A4 PDF writer using the built-in Helvetica fonts, so no external library is needed.
+function makePDF(lines) {
+  const W = 595, H = 842, M = 50, WIN = { "–": 150, "—": 151, "’": 146, "‘": 145, "“": 147, "”": 148, "•": 149, "…": 133, "≈": 126 };
+  const enc = (t) => [...t].map((ch) => { const c = WIN[ch] || ch.charCodeAt(0); return c < 256 && ch.length === 1 ? String.fromCharCode(c) : ""; })
+    .join("").trim().replace(/[\\()]/g, "\\$&");
+  const wrap = (t, size) => {           // rough Helvetica width ≈ 0.5em per character
+    const max = Math.floor((W - 2 * M - 20) / (size * 0.5)), out = [];
+    let cur = "";
+    t.split(" ").forEach((w) => { if (cur && (cur + " " + w).length > max) { out.push(cur); cur = w; } else cur = cur ? cur + " " + w : w; });
+    return out.concat(cur);
+  };
+  const pages = [];
+  let ops = null, y = 0;
+  const newPage = () => {
+    ops = ["0.078 0.639 0.498 rg 0 " + (H - 70) + " " + W + " 70 re f",
+      "BT 1 1 1 rg /F2 22 Tf " + M + " " + (H - 45) + " Td (" + enc("NutriPlan") + ") Tj ET",
+      "BT 1 1 1 rg /F1 10 Tf " + (W - M - 140) + " " + (H - 43) + " Td (" + enc(new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })) + ") Tj ET"];
+    pages.push(ops); y = H - 105;
+  };
+  newPage();
+  lines.forEach(({ t, size = 11, bold, color = "0.11 0.14 0.19", gap = 6, indent = 0 }) => {
+    wrap(t, size).forEach((part) => {
+      if (y < M + size) newPage();
+      ops.push("BT " + color + " rg /F" + (bold ? 2 : 1) + " " + size + " Tf " + (M + indent) + " " + y + " Td (" + enc(part) + ") Tj ET");
+      y -= size + 4;
+    });
+    y -= gap;
+  });
+  const objs = ["<< /Type /Catalog /Pages 2 0 R >>", "", "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>"];
+  const kids = pages.map((p) => {
+    const body = p.join("\n");
+    objs.push("<< /Length " + body.length + " >>\nstream\n" + body + "\nendstream");
+    objs.push("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + W + " " + H + "] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents " + (objs.length) + " 0 R >>");
+    return objs.length + " 0 R";
+  });
+  objs[1] = "<< /Type /Pages /Kids [" + kids.join(" ") + "] /Count " + kids.length + " >>";
+  let pdf = "%PDF-1.4\n";
+  const offs = objs.map((o, i) => { const at = pdf.length; pdf += (i + 1) + " 0 obj\n" + o + "\nendobj\n"; return at; });
+  const xref = pdf.length;
+  pdf += "xref\n0 " + (objs.length + 1) + "\n0000000000 65535 f \n" + offs.map((o) => String(o).padStart(10, "0") + " 00000 n \n").join("");
+  pdf += "trailer\n<< /Size " + (objs.length + 1) + " /Root 1 0 R >>\nstartxref\n" + xref + "\n%%EOF";
+  return new Blob([Uint8Array.from(pdf, (c) => c.charCodeAt(0))], { type: "application/pdf" });
+}
+
+function downloadPDF() {
+  const muted = "0.4 0.44 0.52", brand = "0.078 0.639 0.498";
+  const lines = [
+    { t: "Your daily meal plan", size: 18, bold: true, gap: 4 },
+    { t: C.target + " kcal a day " + GOAL_TEXT[C.mode] + " · Goal weight " + fmt(C.goal) + " kg", color: muted, gap: 2 },
+    { t: "Daily macros: " + macroText(), color: muted, gap: 16 }
+  ];
+  P.forEach((m) => {
+    lines.push({ t: m.name + "   (≈ " + m.kcal + " kcal)", size: 14, bold: true, color: brand, gap: 2 });
+    m.items.forEach((x) => lines.push({ t: "• " + x.n + " – " + x.q + " · ≈ " + x.k + " kcal", indent: 10, gap: 2 }));
+    if (!m.items.length) lines.push({ t: "No matching foods. Try removing an allergy.", indent: 10, color: muted });
+    lines.push({ t: "", size: 6, gap: 8 });
+  });
+  lines.push({ t: "Pick one option for each meal. Calories are approximate.", color: muted, size: 10, gap: 2 });
+  lines.push({ t: "NutriPlan gives general guidance and is not medical advice. Talk to a doctor or dietitian if you have a health condition or are pregnant. Always check food labels for allergens.", color: muted, size: 9, gap: 10 });
+  lines.push({ t: "Created by Gaurav Patil · © 2026 Gaurav Patil. All rights reserved." + (siteUrl() ? " · " + siteUrl() : ""), color: muted, size: 9 });
+  const a = el("a");
+  a.href = URL.createObjectURL(makePDF(lines));
+  a.download = "nutriplan-meal-plan-" + todayKey() + ".pdf";
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  toast("✓ Meal plan PDF downloaded");
+}
+
+/* ============ 6. EVENTS ============ */
+function start() {
+  const num = (id) => parseFloat($("#" + id).value);
+  const p = {
+    age: num("age"), h: num("h"), w: num("w"), sex: $("#sex").value, act: +$("#act").value, pace: +$("#pace").value,
+    diet: +($("input[name=diet]:checked") || {}).value,
+    allergies: $$("input[name=allergy]:checked").map((i) => i.value), goal: null
+  };
+  const bad = Object.entries(LIMITS).find(([k, [a, b]]) => !(p[k] >= a && p[k] <= b));
+  if (bad) { $("#err").textContent = bad[1][2] + " must be between " + bad[1][0] + " and " + bad[1][1] + "."; return; }
+  if (Number.isNaN(p.diet)) { $("#err").textContent = "Please choose what you eat."; return; }
+  $("#err").textContent = "";
+  S = p; store.set("profile", S); loadLog();
+  $("#result").hidden = false;
+  refresh();
+  $("#result").scrollIntoView({ behavior: "smooth" });
+}
+
+function setGoal() {
+  const v = $("#goal").value.trim(), g = v ? parseFloat(v) : null;
+  if (g !== null && !(g >= 30 && g <= 300)) { $("#goalErr").textContent = "Enter a goal between 30 and 300 kg."; return; }
+  $("#goalErr").textContent = "";
+  S.goal = g; store.set("profile", S); refresh();
+}
+
+function addCustom() {
+  const n = $("#fName").value.trim(), k = parseFloat($("#fKcal").value);
+  if (!n || !(k > 0 && k <= 3000)) { $("#fErr").textContent = "Enter a food name and calories (1–3000)."; return; }
+  $("#fErr").textContent = "";
+  addLog(n, k);
+  $("#fName").value = ""; $("#fKcal").value = "";
+}
+
+function restore(p) {
+  ["age", "h", "w", "sex"].forEach((k) => { $("#" + k).value = p[k]; });
+  $("#act").value = p.act; $("#pace").value = p.pace;
+  $$("input[name=diet]").forEach((i) => { i.checked = +i.value === p.diet; });
+  $$("input[name=allergy]").forEach((i) => { i.checked = p.allergies.includes(i.value); });
+}
+
+/* ============ 7. START-UP ============ */
+function chips(box, name, type, items) {
+  $(box).replaceChildren(...items.map(([v, t]) => {
+    const i = el("input"); i.type = type; i.name = name; i.value = v;
+    return el("label", "chip", null, [i, el("span", null, t)]);
+  }));
+}
+chips("#diets", "diet", "radio", DIETS.map((t, i) => [i, t]));
+chips("#allergies", "allergy", "checkbox", ALLERGENS);
+$("#act").replaceChildren(...ACTIVITY.map(([t, v], i) => new Option(t, v, false, i === 1)));
+$("#pace").replaceChildren(...PACE.map(([t, v], i) => new Option(t, v, false, i === 1)));
+
+$("#go").onclick = start;
+$("#setGoal").onclick = setGoal;
+$("#addBtn").onclick = addCustom;
+$("#clearBtn").onclick = () => { log = []; saveLog(); renderTracker(); };
+$("#toastBtn").onclick = () => $("#tracker").scrollIntoView({ behavior: "smooth" });
+$("#termsLink").onclick = () => { $("#legalTerms").open = true; $("#legal").scrollIntoView({ behavior: "smooth" }); };
+$("#wipe").onclick = (e) => {
+  const b = e.target;
+  if (b.dataset.sure !== "1") { b.dataset.sure = "1"; b.textContent = "Click again to confirm"; return; }
+  try { localStorage.removeItem("nutriplan:profile"); localStorage.removeItem("nutriplan:log"); } catch (err) { /* storage unavailable */ }
+  S = null; log = [];
+  $("#result").hidden = true;
+  $$("input[type=number],input[type=text],input[type=radio],input[type=checkbox]").forEach((i) => { i.value = i.type === "radio" || i.type === "checkbox" ? i.value : ""; i.checked = false; });
+  b.dataset.sure = ""; b.textContent = "✓ Saved data deleted";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+// Pressing Enter in a field clicks that section's main button
+$$("input[type=number],input[type=text]").forEach((i) => {
+  i.onkeydown = (e) => { if (e.key === "Enter") i.closest("section").querySelector(".btn").click(); };
+});
+
+renderTools();
+
+const saved = store.get("profile", null);
+if (saved && Array.isArray(saved.allergies) && saved.h) {
+  S = saved; restore(S); loadLog();
+  $("#result").hidden = false;
+  refresh();
+}
+</script>
+</body>
+</html>
