@@ -9,16 +9,26 @@ A free calorie tracker and diet planner. Enter your age, height, weight, food pr
 - Optimal weight and healthy range from your height (BMI 18.5 to 24.9)
 - Optional goal weight, with the time needed to reach it
 - Daily calories (Mifflin-St Jeor equation) with a safe minimum, plus protein, carb and fat targets
-- Meal plan for Vegan, Vegetarian, Eggetarian and Non-vegetarian diets
+- Meal plans for Vegan, Vegetarian, Eggetarian and Non-vegetarian diets
 - Allergy filters: dairy, gluten, nuts, soy, eggs, fish
 - Daily calorie tracker with quick "add" buttons
 - Share the plan or download it as a PDF (built in the browser, no library)
 - Light and dark mode, works on phones, tablets and desktops
-- Legal pages: health disclaimer, privacy, terms and copyright
+- Legal information: health disclaimer, privacy, terms and copyright
 
-## Tech
+## Project structure
 
-One file, no build step, no dependencies: plain HTML, CSS and JavaScript in `index.html`.
+```
+nutriplan/
+├── index.html   Page structure and legal text
+├── style.css    All styling, colours and responsive layout
+├── data.js      Settings, food list and Useful tools links (edit this most often)
+├── script.js    App logic: calculations, rendering, tracker, share and PDF
+├── README.md
+└── LICENSE
+```
+
+No build step and no dependencies. `data.js` must load before `script.js`.
 
 ## Run it locally
 
@@ -26,18 +36,18 @@ Download the repository and open `index.html` in your browser.
 
 ## Edit it
 
-Everything you are likely to change is in the `CONFIG` area at the top of the script in `index.html`:
-
-| What | Where |
+| What you want to change | File |
 | --- | --- |
-| Foods and calories | `FOODS` list |
-| Diet types, allergies, meal split | `DIETS`, `ALLERGENS`, `MEALS` |
-| Useful tools (affiliate links) | `TOOLS` list and `DISCLOSURE` |
-| Colours | theme section at the top of the CSS |
+| Foods and calories | `data.js` (`FOODS`) |
+| Diet types, allergies, meal split, activity levels | `data.js` |
+| Useful tools and affiliate links | `data.js` (`TOOLS`, `DISCLOSURE`) |
+| Colours and layout | `style.css` (theme section at the top) |
+| Calculations and behaviour | `script.js` |
+| Page text and legal sections | `index.html` |
 
 ## Deploy
 
-Drag the folder onto [Netlify Drop](https://app.netlify.com/drop), or turn on GitHub Pages in the repository settings (Settings, then Pages, then deploy from the `main` branch).
+Drag the whole folder onto [Netlify Drop](https://app.netlify.com/drop), or turn on GitHub Pages (Settings, then Pages, then deploy from the `main` branch).
 
 ## Privacy
 
